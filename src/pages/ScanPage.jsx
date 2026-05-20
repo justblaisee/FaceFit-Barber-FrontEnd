@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Button from '../components/Button';
 import Webcam from 'react-webcam';
+import axios from 'axios';
 import { useCallback ,useRef, useState } from "react";
 
 function ScanPage() {
@@ -32,7 +33,10 @@ function ScanPage() {
     setIsAnalyzing(true);
     
     try {
-      //
+      const response = await axios.post("Testing", {
+        image: imageSrc
+      });
+      setAnalysisResult(response.data);
     } catch (error) {
       console.error("Gagal mengirim data ke server:", error);
       alert("Terjadi kesalahan sistem.");
