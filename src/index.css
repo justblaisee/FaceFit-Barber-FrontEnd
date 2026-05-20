@@ -1,0 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'DM Sans', sans-serif;
+  background: #0f0f0f;
+}
+
+@theme {
+  --font-sans: "DM Sans", sans-serif, system-ui, sans-serif;
+  --font-heading: "Outfit", sans-serif;
+}
+
+body {
+  @apply font-sans bg-[#0f0f0f] text-white;
+}
