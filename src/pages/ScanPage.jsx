@@ -3,42 +3,88 @@ import Navbar from '../components/Navbar';
 import Button from '../components/Button';
 import Webcam from 'react-webcam';
 import axios from 'axios';
-import { useCallback ,useRef, useState } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 
 function ScanPage() {
   const navigate = useNavigate();
   const webcamRef = useRef(null);
   const [imageSrc, setImageSrc] = useState(null);
+  const [imageBlob, setImageBlob] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
 
   const capture = useCallback(() => {
-    const imageSrc = webcamRef.current.getScreenshot();
-    setImageSrc(imageSrc);
+    const canvas = webcamRef.current.getCanvas();
+    if (canvas) {
+      canvas.toBlob((blob) => {
+        setImageBlob(blob);
+        setImageSrc(URL.createObjectURL(blob));
+      }, "image/jpeg", 0.9);
+    }
   }, [webcamRef]);
 
   const retake = () => {
+    if (imageSrc) {
+      URL.revokeObjectURL(imageSrc);
+    }
     setImageSrc(null);
+    setImageBlob(null);
     setAnalysisResult(null);
   };
 
+  useEffect(() => {
+    // Cleanup memory saat komponen di-unmount agar tidak terjadi memory leak
+    return () => {
+      if (imageSrc) URL.revokeObjectURL(imageSrc);
+    };
+  }, [imageSrc]);
+
   const videoConstraints = {
-    width: 1920,
-    height: 1080,
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
     facingMode: "user",
   };
 
   const analyzePhoto = async () => {
-    if (isAnalyzing) return;
+    if (isAnalyzing || !imageBlob) return;
     setIsAnalyzing(true);
     
     try {
-      const response = await axios.post("Testing", {
-        image: imageSrc
+      const formData = new FormData();
+
+      formData.append("image", imageBlob, "capture.jpg");
+
+      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
+      /* Kirim ke BackEnd Dengan Methods POST*/
+      const result = await axios.post(
+        `${API_URL}/api/faces/analyze`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+
+      console.log(result.data);
+
+      setAnalysisResult({
+        faceShape: result.data.faceShape,
+
+        description: " Proses analisis wajah berhasil dilakukan.",
+
+        recommendations: result.data.hairstyle.map((item) => ({
+          name: item,
+
+          desc: "Rekomendasi gaya rambut yang cocok untuk bentuk wajah Anda.",
+
+          img: "https://placehold.co/400x400/png",
+        })),
       });
-      setAnalysisResult(response.data);
     } catch (error) {
       console.error("Gagal mengirim data ke server:", error);
+
       alert("Terjadi kesalahan sistem.");
     } finally {
       setIsAnalyzing(false);
