@@ -5,6 +5,38 @@ import Webcam from 'react-webcam';
 import axios from 'axios';
 import { useCallback, useRef, useState, useEffect } from "react";
 
+const hairstyleImageMap = {
+    "Blowout": "/hairstyles/blowout.png",
+    "Buzz Cut": "/hairstyles/buzz-cut.png",
+    "Caesar Cut": "/hairstyles/caesar-cut.png",
+    "Comma Hair": "/hairstyles/comma-hair.png",
+    "Crew Cut": "/hairstyles/crew-cut.png",
+    "Curtain": "/hairstyles/curtain.png",
+    "Edgar Haircut": "/hairstyles/edgar-haircut.png",
+    "Fluffy Hair": "/hairstyles/fluffy-hair.png",
+    "French Crop": "/hairstyles/french-crop.png",
+    "Layered Hair": "/hairstyles/layered-hair.png",
+    "Low Fade": "/hairstyles/low-fade.png",
+    "Messy Crop": "/hairstyles/messy-crop.png",
+    "Messy Quiff": "/hairstyles/messy-quiff.png",
+    "Faux Hawk": "/hairstyles/faux-hawk.png",
+    "High Fade": "/hairstyles/high-fade.png",
+    "Ivy League": "/hairstyles/ivy-league.png",
+    "Pompadour Modern": "/hairstyles/pompadour-modern.png",
+    "Quiff": "/hairstyles/quiff.png",
+    "Spiky Hair": "/hairstyles/spiky-hair.png",
+    "Textured Top": "/hairstyles/textured-top.png",
+    "Burr Cut": "/hairstyles/burr-cut.png",
+    "Butch Cut": "/hairstyles/butch-cut.png",
+    "Flat Top": "/hairstyles/flat-top.png",
+    "Side Part": "/hairstyles/side-part.png",
+    "Side Swept Fringe": "/hairstyles/side-swept-fringe.png",
+    "Slick Back": "/hairstyles/slick-back.png",
+    "Textured Fringe": "/hairstyles/textured-fringe.png",
+    "Textured Quiff": "/hairstyles/textured-quiff.png",
+    "Two Block": "/hairstyles/two-block.png"
+};
+
 function ScanPage() {
   const navigate = useNavigate();
   const webcamRef = useRef(null);
@@ -110,15 +142,9 @@ function ScanPage() {
 
       const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-      /* Kirim ke BackEnd Dengan Methods POST */
       const result = await axios.post(
         `${API_URL}/api/faces/analyze`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
+        formData
       );
 
       clearInterval(progressInterval);
@@ -127,21 +153,31 @@ function ScanPage() {
 
       console.log(result.data);
 
+      const rawFaceShape = result.data.faceShape || "Oval";
+      const faceShape =
+        rawFaceShape.charAt(0).toUpperCase() + rawFaceShape.slice(1).toLowerCase();
+
+      const confidence =
+        typeof result.data.confidence === "number"
+          ? Number((result.data.confidence * 100).toFixed(1))
+          : 0;
       const hairstyles = result.data.hairstyle || [];
       const primaryStyle = hairstyles[0] || "Modern Haircut";
+      const primaryImage = hairstyleImageMap[primaryStyle] || "/hairstyles/default.jpg";
 
       setAnalysisResult({
-        faceShape: result.data.faceShape || "Oval",
-        description: `Berdasarkan hasil analisis Model AI pada foto Anda, bentuk wajah Anda terdeteksi sebagai bentuk ${result.data.faceShape || "Oval"}.`,
+        faceShape,
+        description: `Berdasarkan hasil analisis Model AI pada foto Anda, bentuk wajah Anda terdeteksi sebagai bentuk ${faceShape} dengan confidence ${confidence}%.`,
+        hairstyles,
         primaryRecommendation: {
           name: primaryStyle,
-          matchPercentage: 98.4,
-          desc: `Gaya ${primaryStyle} sangat direkomendasikan karena memberikan keseimbangan ideal pada bentuk wajah ${result.data.faceShape || "Oval"} Anda, mengimbangi garis sudut yang tegas dan memberikan volume natural di area atas.`,
-          img: "",
+          matchPercentage: confidence,
+          desc: `Gaya ${primaryStyle} direkomendasikan untuk bentuk wajah ${faceShape}. Rekomendasi ini diambil berdasarkan hasil klasifikasi bentuk wajah dari model AI.`,
+          img: primaryImage,
           specs: {
-            volume: "Medium / Bertekstur",
-            maintenance: "Sangat Praktis",
-            styling: "Matte Clay / Hair Wax"
+            volume: "Menyesuaikan gaya rambut",
+            maintenance: "Tergantung gaya",
+            styling: "Opsional"
           }
         }
       });
