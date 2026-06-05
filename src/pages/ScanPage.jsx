@@ -1,3 +1,4 @@
+// Import hooks dan library yang dibutuhkan
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Button from '../components/Button';
@@ -5,53 +6,62 @@ import Webcam from 'react-webcam';
 import axios from 'axios';
 import { useCallback, useRef, useState, useEffect } from "react";
 
+// Mapping nama hairstyle dengan gambar yang ada di folder public/hairstyles
 const hairstyleImageMap = {
-    "Blowout": "/hairstyles/blowout.png",
-    "Buzz Cut": "/hairstyles/buzz-cut.png",
-    "Caesar Cut": "/hairstyles/caesar-cut.png",
-    "Comma Hair": "/hairstyles/comma-hair.png",
-    "Crew Cut": "/hairstyles/crew-cut.png",
-    "Curtain": "/hairstyles/curtain.png",
-    "Edgar Haircut": "/hairstyles/edgar-haircut.png",
-    "Fluffy Hair": "/hairstyles/fluffy-hair.png",
-    "French Crop": "/hairstyles/french-crop.png",
-    "Layered Hair": "/hairstyles/layered-hair.png",
-    "Low Fade": "/hairstyles/low-fade.png",
-    "Messy Crop": "/hairstyles/messy-crop.png",
-    "Messy Quiff": "/hairstyles/messy-quiff.png",
-    "Faux Hawk": "/hairstyles/faux-hawk.png",
-    "High Fade": "/hairstyles/high-fade.png",
-    "Ivy League": "/hairstyles/ivy-league.png",
-    "Pompadour Modern": "/hairstyles/pompadour-modern.png",
-    "Quiff": "/hairstyles/quiff.png",
-    "Spiky Hair": "/hairstyles/spiky-hair.png",
-    "Textured Top": "/hairstyles/textured-top.png",
-    "Burr Cut": "/hairstyles/burr-cut.png",
-    "Butch Cut": "/hairstyles/butch-cut.png",
-    "Flat Top": "/hairstyles/flat-top.png",
-    "Side Part": "/hairstyles/side-part.png",
-    "Side Swept Fringe": "/hairstyles/side-swept-fringe.png",
-    "Slick Back": "/hairstyles/slick-back.png",
-    "Textured Fringe": "/hairstyles/textured-fringe.png",
-    "Textured Quiff": "/hairstyles/textured-quiff.png",
-    "Two Block": "/hairstyles/two-block.png"
+  "Blowout": "/hairstyles/blowout.png",
+  "Buzz Cut": "/hairstyles/buzz-cut.png",
+  "Caesar Cut": "/hairstyles/caesar-cut.png",
+  "Comma Hair": "/hairstyles/comma-hair.png",
+  "Crew Cut": "/hairstyles/crew-cut.png",
+  "Curtain": "/hairstyles/curtain.png",
+  "Edgar Haircut": "/hairstyles/edgar-haircut.png",
+  "Fluffy Hair": "/hairstyles/fluffy-hair.png",
+  "French Crop": "/hairstyles/french-crop.png",
+  "Layered Hair": "/hairstyles/layered-hair.png",
+  "Low Fade": "/hairstyles/low-fade.png",
+  "Messy Crop": "/hairstyles/messy-crop.png",
+  "Messy Quiff": "/hairstyles/messy-quiff.png",
+  "Faux Hawk": "/hairstyles/faux-hawk.png",
+  "High Fade": "/hairstyles/high-fade.png",
+  "Ivy League": "/hairstyles/ivy-league.png",
+  "Pompadour Modern": "/hairstyles/pompadour-modern.png",
+  "Quiff": "/hairstyles/quiff.png",
+  "Spiky Hair": "/hairstyles/spiky-hair.png",
+  "Textured Top": "/hairstyles/textured-top.png",
+  "Burr Cut": "/hairstyles/burr-cut.png",
+  "Butch Cut": "/hairstyles/butch-cut.png",
+  "Flat Top": "/hairstyles/flat-top.png",
+  "Side Part": "/hairstyles/side-part.png",
+  "Side Swept Fringe": "/hairstyles/side-swept-fringe.png",
+  "Slick Back": "/hairstyles/slick-back.png",
+  "Textured Fringe": "/hairstyles/textured-fringe.png",
+  "Textured Quiff": "/hairstyles/textured-quiff.png",
+  "Two Block": "/hairstyles/two-block.png"
 };
 
+// Komponen halaman scan wajah
 function ScanPage() {
   const navigate = useNavigate();
+
+  // Ref untuk webcam dan input file
   const webcamRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  // State untuk menyimpan gambar, file gambar, dan hasil analisis
   const [imageSrc, setImageSrc] = useState(null);
   const [imageBlob, setImageBlob] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
-  
+
+  // State untuk animasi proses scanning
   const [scanStepText, setScanStepText] = useState("MENCARI WAJAH...");
   const [scanProgress, setScanProgress] = useState(0);
-  const fileInputRef = useRef(null);
   const [animatedMatchPercentage, setAnimatedMatchPercentage] = useState(0);
 
+  // Mengambil gambar dari webcam dalam bentuk blob
   const capture = useCallback(() => {
     const canvas = webcamRef.current.getCanvas();
+
     if (canvas) {
       canvas.toBlob((blob) => {
         setImageBlob(blob);
@@ -60,88 +70,100 @@ function ScanPage() {
     }
   }, [webcamRef]);
 
+  // Menghapus gambar sebelumnya dan mengulang proses scan
   const retake = () => {
     if (imageSrc) {
       URL.revokeObjectURL(imageSrc);
     }
+
     setImageSrc(null);
     setImageBlob(null);
     setAnalysisResult(null);
     setScanProgress(0);
     setAnimatedMatchPercentage(0);
+
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
+  // Membersihkan object URL saat komponen tidak digunakan
   useEffect(() => {
     return () => {
       if (imageSrc) URL.revokeObjectURL(imageSrc);
     };
   }, [imageSrc]);
 
+  // Menangani upload foto dari perangkat user
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
+
     if (file) {
       setImageBlob(file);
       setImageSrc(URL.createObjectURL(file));
     }
   };
 
+  // Membuka input file secara programmatic
   const triggerUpload = () => {
     fileInputRef.current?.click();
   };
 
+  // Animasi persentase match setelah hasil analisis muncul
   useEffect(() => {
     let timer;
-    
+
     if (analysisResult?.primaryRecommendation?.matchPercentage) {
-      timer = setTimeout(() => {
-      }, 500);
-      
       timer = setTimeout(() => {
         setAnimatedMatchPercentage(analysisResult.primaryRecommendation.matchPercentage);
       }, 100);
     }
-    
+
     return () => {
       if (timer) clearTimeout(timer);
     };
   }, [analysisResult]);
 
+  // Pengaturan kamera webcam
   const videoConstraints = {
     width: { ideal: 1280 },
     height: { ideal: 720 },
     facingMode: "user",
   };
 
+  // Mengirim gambar ke backend AI untuk dianalisis
   const analyzePhoto = async () => {
     if (isAnalyzing || !imageBlob) return;
+
     setIsAnalyzing(true);
     setScanProgress(0);
-    
+
+    // Simulasi progress scanning agar UI terasa interaktif
     const progressInterval = setInterval(() => {
       setScanProgress((prev) => {
         if (prev >= 95) {
           clearInterval(progressInterval);
           return 95;
         }
-        
+
         if (prev < 25) setScanStepText("MEMETAKAN KOORDINAT WAJAH...");
         else if (prev < 55) setScanStepText("MENGANALISIS STRUKTUR TULANG PIPI...");
         else if (prev < 80) setScanStepText("MENGHITUNG METRIK RAUNG...");
         else setScanStepText("MENGKOMPARASI PREDIKSI GAYA RAMBUT...");
-        
+
         return prev + 5;
       });
     }, 150);
-    
+
     try {
+      // Membuat form data untuk upload gambar
       const formData = new FormData();
       formData.append("image", imageBlob, "capture.jpg");
 
+      // URL backend diambil dari environment variable
       const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
+      // Mengirim foto ke endpoint analisis wajah
       const result = await axios.post(
         `${API_URL}/api/faces/analyze`,
         formData
@@ -153,18 +175,23 @@ function ScanPage() {
 
       console.log(result.data);
 
+      // Mengambil hasil bentuk wajah dari response backend
       const rawFaceShape = result.data.faceShape || "Oval";
       const faceShape =
         rawFaceShape.charAt(0).toUpperCase() + rawFaceShape.slice(1).toLowerCase();
 
+      // Mengubah confidence menjadi persen
       const confidence =
         typeof result.data.confidence === "number"
           ? Number((result.data.confidence * 100).toFixed(1))
           : 0;
+
+      // Mengambil rekomendasi hairstyle dari backend
       const hairstyles = result.data.hairstyle || [];
       const primaryStyle = hairstyles[0] || "Modern Haircut";
       const primaryImage = hairstyleImageMap[primaryStyle] || "/hairstyles/default.jpg";
 
+      // Menyimpan hasil analisis untuk ditampilkan ke UI
       setAnalysisResult({
         faceShape,
         description: `Berdasarkan hasil analisis Model AI pada foto Anda, bentuk wajah Anda terdeteksi sebagai bentuk ${faceShape} dengan confidence ${confidence}%.`,
@@ -193,14 +220,21 @@ function ScanPage() {
   return (
     <div className="min-h-screen bg-[#070708] text-white flex flex-col relative overflow-x-hidden">
       <Navbar />
-      <main className="grow flex flex-col items-center py-8 px-6 relative z-10">
 
+      <main className="grow flex flex-col items-center py-8 px-6 relative z-10">
         <div className="text-center mb-8 w-full max-w-2xl ">
           <div className="relative w-full aspect-4/3 sm:aspect-video bg-zinc-950 rounded-2xl overflow-hidden flex items-center justify-center mb-6 shadow-2xl border border-neutral-800 shadow-blue-900/10">
-          
+
             {imageSrc ? (
+              // Preview gambar hasil capture atau upload
               <div className="relative w-full h-full">
-                <img src={imageSrc} alt="Hasil tangkapan kamera" className="w-full h-full object-cover" />
+                <img
+                  src={imageSrc}
+                  alt="Hasil tangkapan kamera"
+                  className="w-full h-full object-cover"
+                />
+
+                {/* Efek animasi saat proses analisis berlangsung */}
                 {isAnalyzing && (
                   <>
                     <div className="absolute inset-0 bg-blue-500/10 animate-pulse pointer-events-none"></div>
@@ -214,16 +248,17 @@ function ScanPage() {
               </div>
             ) : (
               <>
-                <Webcam 
-                  audio={false} 
-                  ref={webcamRef} 
-                  screenshotFormat="image/jpeg" 
-                  className="w-full h-full object-cover" 
+                {/* Tampilan kamera webcam */}
+                <Webcam
+                  audio={false}
+                  ref={webcamRef}
+                  screenshotFormat="image/jpeg"
+                  className="w-full h-full object-cover"
                   videoConstraints={videoConstraints}
-                  mirrored 
+                  mirrored
                 />
 
-                {/* Panduang Overlay Saat Ambil Gambar*/}
+                {/* Panduan overlay saat mengambil gambar */}
                 <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
                   <div className="w-[60%] h-[80%] sm:w-[45%] sm:h-[85%] border-2 border-blue-500/40 border-dashed rounded-[50%] shadow-[0_0_0_9999px_rgba(0,0,0,0.65)] transition-all"></div>
                 </div>
@@ -231,11 +266,15 @@ function ScanPage() {
             )}
           </div>
 
+          {/* Menampilkan progress analisis atau instruksi scan */}
           {isAnalyzing ? (
             <div className="max-w-md mx-auto bg-zinc-900/60 border border-blue-500/20 p-4 rounded-xl backdrop-blur-md">
-              <div className="text-blue-400 text-xs font-black tracking-widest mb-1.5 uppercase">{scanStepText}</div>
+              <div className="text-blue-400 text-xs font-black tracking-widest mb-1.5 uppercase">
+                {scanStepText}
+              </div>
+
               <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
-                <div 
+                <div
                   className="bg-linear-to-r from-blue-500 to-indigo-500 h-full transition-all duration-300"
                   style={{ width: `${scanProgress}%` }}
                 ></div>
@@ -243,96 +282,125 @@ function ScanPage() {
             </div>
           ) : (
             <p className="text-neutral-400 text-sm">
-              {imageSrc ? "Lakukan analisis foto atau ambil ulang gambar." : "Posisikan wajah Anda simetris di tengah garis panduan atau mulai dengan Upload Foto."}
+              {imageSrc
+                ? "Lakukan analisis foto atau ambil ulang gambar."
+                : "Posisikan wajah Anda simetris di tengah garis panduan atau mulai dengan Upload Foto."}
             </p>
           )}
         </div>
+
+        {/* Tombol scan, upload, retake, dan batal */}
         <div className="flex flex-wrap items-center justify-center gap-4 mb-10 w-full max-w-xl mx-auto">
           {imageSrc ? (
             <>
               {!isAnalyzing && (
-                <Button 
-                  text={isAnalyzing ? "Menganalisis..." : "Mulai Analisis"} 
-                  onClick={analyzePhoto} 
+                <Button
+                  text={isAnalyzing ? "Menganalisis..." : "Mulai Analisis"}
+                  onClick={analyzePhoto}
                   variant="primary"
                 />
               )}
+
               {!isAnalyzing && (
-                <Button 
-                  text="Ambil Ulang" 
-                  variant="outline" 
-                  onClick={retake} 
+                <Button
+                  text="Ambil Ulang"
+                  variant="outline"
+                  onClick={retake}
                 />
               )}
             </>
           ) : (
             <>
-              <Button 
-                text="Ambil Foto" 
-                variant="primary" 
-                onClick={capture} 
+              <Button
+                text="Ambil Foto"
+                variant="primary"
+                onClick={capture}
               />
-              <Button 
-                text="Upload Foto" 
-                variant="outline" 
-                onClick={triggerUpload} 
+
+              <Button
+                text="Upload Foto"
+                variant="outline"
+                onClick={triggerUpload}
               />
-              <input 
-                type="file" 
-                accept="image/*" 
-                className="hidden" 
-                ref={fileInputRef} 
-                onChange={handleFileUpload} 
+
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
               />
             </>
           )}
 
           {!isAnalyzing && (
-            <Button 
-              text="Batal" 
-              variant="outline" 
-              onClick={() => navigate('/')} 
+            <Button
+              text="Batal"
+              variant="outline"
+              onClick={() => navigate('/')}
             />
           )}
         </div>
-        
+
+        {/* Card hasil analisis */}
         {analysisResult && !isAnalyzing && (
           <div className="w-full max-w-3xl bg-linear-to-b from-zinc-900/80 to-black border border-blue-500/20 rounded-3xl p-6 sm:p-8 shadow-[0_0_50px_rgba(59,130,246,0.15)] backdrop-blur-lg transform animate-[slideUp_0.5s_ease-out] relative overflow-hidden">
-            
+
             <div className="absolute -right-20 -bottom-20 w-48 h-48 bg-blue-600/10 rounded-full blur-3xl"></div>
-            
+
+            {/* Bagian judul hasil analisis */}
             <div className="text-center pb-6 border-b border-white/5 mb-6">
-              <span className="text-[10px] text-blue-400 font-extrabold tracking-[0.2em] uppercase">Hasil Analisis</span>
+              <span className="text-[10px] text-blue-400 font-extrabold tracking-[0.2em] uppercase">
+                Hasil Analisis
+              </span>
+
               <h3 className="text-3xl sm:text-4xl font-black heading-font text-white mt-1">
-                Bentuk Wajah: <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-400 to-indigo-400">{analysisResult.faceShape}</span>
+                Bentuk Wajah:{" "}
+                <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-400 to-indigo-400">
+                  {analysisResult.faceShape}
+                </span>
               </h3>
+
               <p className="text-neutral-400 leading-relaxed max-w-2xl mx-auto text-sm mt-3">
                 {analysisResult.description}
               </p>
             </div>
-            
+
+            {/* Bagian rekomendasi hairstyle */}
             <div className="flex flex-col md:flex-row gap-6 items-center">
-              
               <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-2xl overflow-hidden border border-blue-500/30 shadow-lg shrink-0 bg-neutral-900">
-                <img 
-                  src={analysisResult.primaryRecommendation.img} 
-                  alt={analysisResult.primaryRecommendation.name} 
-                  className="w-full h-full object-cover" 
+                <img
+                  src={analysisResult.primaryRecommendation.img}
+                  alt={analysisResult.primaryRecommendation.name}
+                  className="w-full h-full object-cover"
                 />
+
                 <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
               </div>
-              
+
               <div className="grow w-full">
-                <span className="text-[10px] text-yellow-500 font-extrabold tracking-widest uppercase">REKOMENDASI TERBAIK</span>
-                <h4 className="text-2xl font-black heading-font text-white mt-0.5">{analysisResult.primaryRecommendation.name}</h4>
-                
+                <span className="text-[10px] text-yellow-500 font-extrabold tracking-widest uppercase">
+                  REKOMENDASI TERBAIK
+                </span>
+
+                <h4 className="text-2xl font-black heading-font text-white mt-0.5">
+                  {analysisResult.primaryRecommendation.name}
+                </h4>
+
+                {/* Persentase kecocokan hairstyle */}
                 <div className="bg-black/40 border border-white/5 p-4 rounded-xl mt-3 mb-4">
                   <div className="flex justify-between items-center mb-1.5">
-                    <span className="text-xs text-neutral-400 uppercase tracking-widest font-semibold">Tingkat Kecocokan</span>
-                    <span className="text-lg font-black heading-font text-yellow-500">{analysisResult.primaryRecommendation.matchPercentage}% Match</span>
+                    <span className="text-xs text-neutral-400 uppercase tracking-widest font-semibold">
+                      Tingkat Kecocokan
+                    </span>
+
+                    <span className="text-lg font-black heading-font text-yellow-500">
+                      {analysisResult.primaryRecommendation.matchPercentage}% Match
+                    </span>
                   </div>
+
                   <div className="w-full bg-zinc-800 h-2.5 rounded-full overflow-hidden shadow-inner relative">
-                    <div 
+                    <div
                       className="bg-linear-to-r from-blue-500 via-indigo-500 to-blue-400 h-full rounded-full shadow-[0_0_10px_rgba(59,130,246,0.6)] animate-pulse transition-all duration-1000 ease-out"
                       style={{ width: `${animatedMatchPercentage}%` }}
                     ></div>
@@ -345,26 +413,43 @@ function ScanPage() {
               </div>
             </div>
 
+            {/* Detail tambahan rekomendasi hairstyle */}
             <div className="grid grid-cols-3 gap-2 mt-6 pt-6 border-t border-white/5 text-center">
               <div className="bg-white/5 p-2.5 rounded-xl border border-white/5">
-                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold">Kategori Volume</div>
-                <div className="text-xs font-bold text-blue-400 mt-1">{analysisResult.primaryRecommendation.specs.volume}</div>
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold">
+                  Kategori Volume
+                </div>
+
+                <div className="text-xs font-bold text-blue-400 mt-1">
+                  {analysisResult.primaryRecommendation.specs.volume}
+                </div>
               </div>
+
               <div className="bg-white/5 p-2.5 rounded-xl border border-white/5">
-                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold">Perawatan</div>
-                <div className="text-xs font-bold text-blue-400 mt-1">{analysisResult.primaryRecommendation.specs.maintenance}</div>
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold">
+                  Perawatan
+                </div>
+
+                <div className="text-xs font-bold text-blue-400 mt-1">
+                  {analysisResult.primaryRecommendation.specs.maintenance}
+                </div>
               </div>
+
               <div className="bg-white/5 p-2.5 rounded-xl border border-white/5">
-                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold">Styling Pomade</div>
-                <div className="text-xs font-bold text-blue-400 mt-1">{analysisResult.primaryRecommendation.specs.styling}</div>
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold">
+                  Styling Pomade
+                </div>
+
+                <div className="text-xs font-bold text-blue-400 mt-1">
+                  {analysisResult.primaryRecommendation.specs.styling}
+                </div>
               </div>
             </div>
-
           </div>
         )}
       </main>
     </div>
-  );  
+  );
 }
 
 export default ScanPage;
